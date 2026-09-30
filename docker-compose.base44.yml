@@ -1,0 +1,29 @@
+services:
+  makecode:
+    image: node:22
+    working_dir: /app
+    volumes:
+      - ./:/app
+      - pxt_cache:/root/.pxt
+    ports:
+      - "3000:3000"
+    command:
+      - sh
+      - -ec
+      - |
+        npm install -g makecode &&
+        sed -i 's/"127\.0\.0\.1"/"0.0.0.0"/g' /usr/local/lib/node_modules/makecode/built/simserver.js &&
+        mkc install &&
+        exec mkc serve --port 3000
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - node -e "require('http').get('http://localhost:3000/',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 180s
+    restart: on-failure
+
+volumes:
+  pxt_cache:
